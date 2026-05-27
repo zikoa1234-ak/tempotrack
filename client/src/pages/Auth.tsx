@@ -2,7 +2,7 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { loginSchema, registerSchema } from "@shared/schema";
+import { loginSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -13,21 +13,20 @@ import { useToast } from "@/hooks/use-toast";
 
 type Mode = "login" | "register";
 const loginFormSchema = loginSchema;
-const registerFormSchema = registerSchema;
 
 export default function Auth() {
   const [mode, setMode] = useState<Mode>("login");
+  const [fullName, setFullName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [registerLoading, setRegisterLoading] = useState(false);
+
   const auth = useAuth();
   const { toast } = useToast();
 
   const loginForm = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: { email: "demo@tempotrack.app", password: "demo123" },
-  });
-
-  const registerForm = useForm<z.infer<typeof registerFormSchema>>({
-    resolver: zodResolver(registerFormSchema),
-    defaultValues: { name: "", email: "", password: "" },
   });
 
   async function submitLogin(values: z.infer<typeof loginFormSchema>) {
@@ -39,12 +38,32 @@ export default function Auth() {
     }
   }
 
-  async function submitRegister(values: z.infer<typeof registerFormSchema>) {
+  async function submitRegister(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!fullName.trim()) {
+      toast({ title: "Name is required", variant: "destructive" });
+      return;
+    }
+
+    if (!userEmail.trim() || !/^\S+@\S+\.\S+$/.test(userEmail)) {
+      toast({ title: "Enter a valid email", variant: "destructive" });
+      return;
+    }
+
+    if (registerPassword.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+
     try {
-      await auth.register(values.name, values.email, values.password);
+      setRegisterLoading(true);
+      await auth.register(fullName.trim(), userEmail.trim().toLowerCase(), registerPassword);
       toast({ title: "Account created", description: "Your private workspace is ready." });
     } catch (error) {
       toast({ title: "Could not create account", description: cleanError(error), variant: "destructive" });
+    } finally {
+      setRegisterLoading(false);
     }
   }
 
@@ -126,52 +145,48 @@ export default function Auth() {
                 </form>
               </Form>
             ) : (
-              <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(submitRegister)} className="space-y-4">
-                  <FormField
-                    control={registerForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} autoComplete="name" placeholder="Your name" data-testid="input-register-name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+              <form onSubmit={submitRegister} className="space-y-4" autoComplete="off">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none">Name</label>
+                  <Input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="Your name"
+                    data-testid="input-register-name"
                   />
-                  <FormField
-                    control={registerForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="email" autoComplete="email" placeholder="you@example.com" data-testid="input-register-email" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none">Email</label>
+                  <Input
+                    type="email"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="you@example.com"
+                    data-testid="input-register-email"
                   />
-                  <FormField
-                    control={registerForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="password" autoComplete="new-password" placeholder="At least 6 characters" data-testid="input-register-password" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none">Password</label>
+                  <Input
+                    type="password"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    autoComplete="new-password"
+                    placeholder="At least 6 characters"
+                    data-testid="input-register-password"
                   />
-                  <Button type="submit" className="w-full" disabled={registerForm.formState.isSubmitting} data-testid="button-register">
-                    {registerForm.formState.isSubmitting ? "Creating..." : "Create account"}
-                  </Button>
-                </form>
-              </Form>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={registerLoading} data-testid="button-register">
+                  {registerLoading ? "Creating..." : "Create account"}
+                </Button>
+              </form>
             )}
 
             <div className="mt-5 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
