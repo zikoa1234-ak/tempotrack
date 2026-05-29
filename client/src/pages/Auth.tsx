@@ -24,7 +24,7 @@ export default function Auth() {
 
   const loginForm = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
-    defaultValues: { email: "demo@tempotrack.app", password: "demo123" },
+    defaultValues: { email: "", password: "" },
   });
 
   const registerForm = useForm<z.infer<typeof registerFormSchema>>({
@@ -100,7 +100,7 @@ export default function Auth() {
             <CardTitle>{mode === "login" ? "Sign in" : "Create account"}</CardTitle>
             <CardDescription>
               {mode === "login"
-                ? "Use the demo account or your own account to load saved tasks."
+                ? "Sign in to your account to load saved tasks."
                 : "New users get their own private task database view."}
             </CardDescription>
           </CardHeader>
@@ -188,9 +188,7 @@ export default function Auth() {
               </Form>
             )}
 
-            <div className="mt-5 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-              Demo login: <span className="font-medium text-foreground">demo@tempotrack.app</span> / <span className="font-medium text-foreground">demo123</span>
-            </div>
+            
             <Button
               variant="ghost"
               className="mt-3 w-full"
