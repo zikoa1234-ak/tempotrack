@@ -2,9 +2,10 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { insertTaskSchema, type Task, CATEGORIES } from "@shared/schema";
+import { insertTaskSchema, type Task } from "@shared/schema";
 import { useCreateTask, useUpdateTask } from "@/lib/tasks";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,16 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-
-const formSchema = insertTaskSchema.extend({
-  notes: z.string().max(2000).optional(),
-  dueDate: z.string().optional(),
-  timeEstimate: z.coerce.number().int().min(0).optional().nullable(),
-  metricTarget: z.coerce.number().int().min(0).optional().nullable(),
-  metricUnit: z.string().max(20).optional().nullable(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { calculateDuration } from "@/lib/tasks";
 
 export function TaskDialog({
   open,
@@ -47,13 +39,14 @@ export function TaskDialog({
   task?: Task | null;
   defaultPeriod?: "day" | "month" | "year";
 }) {
+  const { t } = useI18n();
   const isEdit = !!task;
   const createMutation = useCreateTask();
   const updateMutation = useUpdateTask();
   const { toast } = useToast();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm({
+    resolver: zodResolver(insertTaskSchema),
     defaultValues: {
       title: "",
       notes: "",
@@ -63,6 +56,8 @@ export function TaskDialog({
       priority: "medium",
       category: "Work",
       dueDate: "",
+      startDate: "",
+      endDate: "",
       timeEstimate: undefined,
       metricTarget: undefined,
       metricUnit: "",
@@ -80,6 +75,8 @@ export function TaskDialog({
         priority: task.priority as any,
         category: task.category,
         dueDate: task.dueDate ?? "",
+        startDate: task.startDate ?? "",
+        endDate: task.endDate ?? "",
         timeEstimate: task.timeEstimate ?? undefined,
         metricTarget: task.metricTarget ?? undefined,
         metricUnit: task.metricUnit ?? "",
@@ -94,6 +91,8 @@ export function TaskDialog({
         priority: "medium",
         category: "Work",
         dueDate: "",
+        startDate: "",
+        endDate: "",
         timeEstimate: undefined,
         metricTarget: undefined,
         metricUnit: "",
@@ -101,11 +100,18 @@ export function TaskDialog({
     }
   }, [task, open, defaultPeriod, form]);
 
-  async function onSubmit(values: FormValues) {
+  const durationDisplay = calculateDuration(
+    form.watch("startDate"),
+    form.watch("endDate")
+  );
+
+  async function onSubmit(values: any) {
     const payload = {
       ...values,
       notes: values.notes?.trim() || null,
       dueDate: values.dueDate?.trim() || null,
+      startDate: values.startDate?.trim() || null,
+      endDate: values.endDate?.trim() || null,
       timeEstimate: values.timeEstimate ?? null,
       metricTarget: values.metricTarget ?? null,
       metricUnit: values.metricUnit?.trim() || null,
@@ -113,14 +119,18 @@ export function TaskDialog({
     try {
       if (isEdit && task) {
         await updateMutation.mutateAsync({ id: task.id, patch: payload });
-        toast({ title: "Task updated", description: payload.title });
+        toast({ title: t("tasks.taskUpdated"), description: payload.title });
       } else {
         await createMutation.mutateAsync(payload as any);
-        toast({ title: "Task created", description: payload.title });
+        toast({ title: t("tasks.taskCreated"), description: payload.title });
       }
       onOpenChange(false);
     } catch (e: any) {
-      toast({ title: "Save failed", description: e?.message ?? "Try again", variant: "destructive" });
+      toast({ 
+        title: t("errors.somethingWentWrong"), 
+        description: e?.message ?? t("errors.tryAgain"), 
+        variant: "destructive" 
+      });
     }
   }
 
@@ -131,53 +141,59 @@ export function TaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg" data-testid="dialog-task">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit task" : "New task"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("tasks.editTask") : t("tasks.newTask")}</DialogTitle>
           <DialogDescription>
-            Track work across day, month, and year — keep your tempo steady.
+            {t("tasks.taskDialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">{t("tasks.title")}</Label>
             <Input
               id="title"
               autoFocus
-              placeholder="e.g. Review Q3 metrics"
+              placeholder={t("tasks.titlePlaceholder")}
               data-testid="input-title"
               {...form.register("title")}
             />
             {form.formState.errors.title && (
-              <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>
+              <p className="text-xs text-destructive">
+                {form.formState.errors.title.message}
+              </p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Period</Label>
+              <Label>{t("tasks.period")}</Label>
               <Select
                 value={form.watch("period")}
                 onValueChange={(v) => form.setValue("period", v as any)}
               >
-                <SelectTrigger data-testid="select-period"><SelectValue /></SelectTrigger>
+                <SelectTrigger data-testid="select-period">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="day">Day</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
-                  <SelectItem value="year">Year</SelectItem>
+                  <SelectItem value="day">{t("tasks.day")}</SelectItem>
+                  <SelectItem value="month">{t("tasks.month")}</SelectItem>
+                  <SelectItem value="year">{t("tasks.year")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Priority</Label>
+              <Label>{t("tasks.priority")}</Label>
               <Select
                 value={form.watch("priority")}
                 onValueChange={(v) => form.setValue("priority", v as any)}
               >
-                <SelectTrigger data-testid="select-priority"><SelectValue /></SelectTrigger>
+                <SelectTrigger data-testid="select-priority">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="low">{t("tasks.low")}</SelectItem>
+                  <SelectItem value="medium">{t("tasks.medium")}</SelectItem>
+                  <SelectItem value="high">{t("tasks.high")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -185,28 +201,38 @@ export function TaskDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Status</Label>
+              <Label>{t("tasks.status")}</Label>
               <Select
                 value={form.watch("status")}
                 onValueChange={(v) => form.setValue("status", v as any)}
               >
-                <SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger>
+                <SelectTrigger data-testid="select-status">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todo">To do</SelectItem>
-                  <SelectItem value="in_progress">In progress</SelectItem>
-                  <SelectItem value="done">Done</SelectItem>
+                  <SelectItem value="todo">{t("tasks.todo")}</SelectItem>
+                  <SelectItem value="in_progress">{t("tasks.inProgress")}</SelectItem>
+                  <SelectItem value="done">{t("tasks.done")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Category</Label>
+              <Label>{t("tasks.category")}</Label>
               <Select
                 value={form.watch("category")}
                 onValueChange={(v) => form.setValue("category", v)}
               >
-                <SelectTrigger data-testid="select-category"><SelectValue /></SelectTrigger>
+                <SelectTrigger data-testid="select-category">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  <SelectItem value="Work">{t("tasks.work")}</SelectItem>
+                  <SelectItem value="Health">{t("tasks.health")}</SelectItem>
+                  <SelectItem value="Learning">{t("tasks.learning")}</SelectItem>
+                  <SelectItem value="Personal">{t("tasks.personal")}</SelectItem>
+                  <SelectItem value="Finance">{t("tasks.finance")}</SelectItem>
+                  <SelectItem value="Creative">{t("tasks.creative")}</SelectItem>
+                  <SelectItem value="General">{t("tasks.general")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -214,8 +240,11 @@ export function TaskDialog({
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="progress">Progress</Label>
-              <span className="tabular-nums text-sm text-muted-foreground" data-testid="text-progress-value">
+              <Label htmlFor="progress">{t("tasks.progress")}</Label>
+              <span 
+                className="tabular-nums text-sm text-muted-foreground" 
+                data-testid="text-progress-value"
+              >
                 {progress}%
               </span>
             </div>
@@ -230,9 +259,42 @@ export function TaskDialog({
             />
           </div>
 
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="startDate">{t("tasks.startDate")}</Label>
+              <Input
+                id="startDate"
+                type="date"
+                data-testid="input-start-date"
+                {...form.register("startDate")}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="endDate">{t("tasks.endDate")}</Label>
+              <Input
+                id="endDate"
+                type="date"
+                data-testid="input-end-date"
+                {...form.register("endDate")}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("tasks.duration")}</Label>
+              {durationDisplay ? (
+                <div className="text-sm border rounded-md py-2 px-3 min-h-[40px] flex items-center">
+                  {durationDisplay}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground border rounded-md py-2 px-3 min-h-[40px] flex items-center">
+                  {t("tasks.noDuration")}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="dueDate">Target date</Label>
+              <Label htmlFor="dueDate">{t("tasks.dueDate")}</Label>
               <Input
                 id="dueDate"
                 type="date"
@@ -241,7 +303,7 @@ export function TaskDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="timeEstimate">Time estimate (min)</Label>
+              <Label htmlFor="timeEstimate">{t("tasks.timeEstimate")}</Label>
               <Input
                 id="timeEstimate"
                 type="number"
@@ -255,7 +317,7 @@ export function TaskDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="metricTarget">Metric target</Label>
+              <Label htmlFor="metricTarget">{t("tasks.metricTarget")}</Label>
               <Input
                 id="metricTarget"
                 type="number"
@@ -266,10 +328,10 @@ export function TaskDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="metricUnit">Unit</Label>
+              <Label htmlFor="metricUnit">{t("tasks.metricUnit")}</Label>
               <Input
                 id="metricUnit"
-                placeholder="km, books, USD…"
+                placeholder={t("tasks.metricUnitPlaceholder")}
                 data-testid="input-metric-unit"
                 {...form.register("metricUnit")}
               />
@@ -277,11 +339,11 @@ export function TaskDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">{t("tasks.notes")}</Label>
             <Textarea
               id="notes"
               rows={3}
-              placeholder="Optional context, links, or sub-steps…"
+              placeholder={t("tasks.notesPlaceholder")}
               data-testid="input-notes"
               {...form.register("notes")}
             />
@@ -294,10 +356,14 @@ export function TaskDialog({
               onClick={() => onOpenChange(false)}
               data-testid="button-cancel-task"
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={isPending} data-testid="button-save-task">
-              {isPending ? "Saving…" : isEdit ? "Save changes" : "Create task"}
+              {isPending 
+                ? t("common.loading") 
+                : isEdit 
+                  ? t("common.saveChanges") 
+                  : t("tasks.createTask")}
             </Button>
           </DialogFooter>
         </form>

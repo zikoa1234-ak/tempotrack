@@ -42,11 +42,46 @@ export function useDeleteTask() {
 
 // ---- Helpers ----
 export function isOverdue(t: Task): boolean {
-  if (!t.dueDate || t.status === "done") return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(t.dueDate + "T00:00:00");
-  return due.getTime() < today.getTime();
+  if (t.status === "done") return false;
+  
+  // Check end date first
+  if (t.endDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(t.endDate + "T23:59:59");
+    if (end.getTime() < today.getTime()) return true;
+  }
+  
+  // Fallback to due date for backward compatibility
+  if (t.dueDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(t.dueDate + "T00:00:00");
+    return due.getTime() < today.getTime();
+  }
+  
+  return false;
+}
+
+export function calculateDuration(startDate?: string | null, endDate?: string | null): string {
+  if (!startDate || !endDate) return "";
+  
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T23:59:59");
+  const diffMs = end.getTime() - start.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+  
+  if (diffDays >= 30) {
+    const months = Math.round(diffDays / 30);
+    return `${months} ${months === 1 ? "month" : "months"}`;
+  } else if (diffDays > 0) {
+    return `${diffDays} ${diffDays === 1 ? "day" : "days"}`;
+  } else if (diffHours > 0) {
+    return `${diffHours} ${diffHours === 1 ? "hour" : "hours"}`;
+  }
+  
+  return "Less than 1 hour";
 }
 
 export function formatDate(iso: string | null | undefined): string {
@@ -65,6 +100,7 @@ export function priorityLabel(p: string): string {
 
 export function statusLabel(s: string): string {
   if (s === "in_progress") return "In progress";
+  if (s === "overdue") return "Overdue";
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 

@@ -14,7 +14,9 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { LogoWordmark } from "./Logo";
 
 const NAV = [
@@ -26,6 +28,7 @@ const NAV = [
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const [location] = useLocation();
+  const { t } = useI18n();
   return (
     <nav className="flex flex-col gap-0.5 px-3" aria-label="Primary">
       {NAV.map(({ href, label, icon: Icon, testId }) => {
@@ -45,7 +48,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
             )}
           >
             <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-sidebar-foreground/60")} />
-            {label}
+            {t(`navigation.${label.toLowerCase()}`)}
           </Link>
         );
       })}
@@ -64,10 +67,13 @@ function initials(name: string) {
 
 function SidebarFooter() {
   const { user } = useAuth();
+  const { t } = useI18n();
   if (!user) return null;
   return (
     <div className="border-t border-sidebar-border px-4 py-4">
-      <p className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">Workspace</p>
+      <p className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
+        {t("dashboard.workspace")}
+      </p>
       <div className="mt-2 flex items-center gap-2.5">
         <div
           className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary font-semibold text-sm"
@@ -107,6 +113,7 @@ export function AppLayout({ children, title, subtitle, actions }: {
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { logout } = useAuth();
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -120,7 +127,7 @@ export function AppLayout({ children, title, subtitle, actions }: {
         </div>
         <div className="px-3 pb-1">
           <p className="px-2.5 py-1.5 text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
-            Navigate
+            {t("navigation.navigate")}
           </p>
         </div>
         <NavList />
@@ -183,12 +190,13 @@ export function AppLayout({ children, title, subtitle, actions }: {
           </div>
           <div className="flex items-center gap-2">
             {actions}
+            <LanguageSelector />
             <ThemeButton />
             <Button
               variant="ghost"
               size="icon"
               onClick={logout}
-              aria-label="Log out"
+              aria-label={t("navigation.logout")}
               data-testid="button-logout"
             >
               <LogOut className="h-4 w-4" />

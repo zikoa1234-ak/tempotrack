@@ -8,7 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { LogoWordmark } from "@/components/Logo";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { PhoneInput } from "@/components/PhoneInput";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 
 type Mode = "login" | "register";
@@ -20,6 +23,7 @@ export default function Auth() {
   const [registerLoading, setRegisterLoading] = useState(false);
 
   const auth = useAuth();
+  const { t } = useI18n();
   const { toast } = useToast();
 
   const loginForm = useForm<z.infer<typeof loginFormSchema>>({
@@ -29,7 +33,13 @@ export default function Auth() {
 
   const registerForm = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { 
+      name: "", 
+      email: "", 
+      password: "",
+      phone: "",
+      countryCode: "+212",
+    },
   });
 
   // Reset form when switching modes
@@ -44,19 +54,39 @@ export default function Auth() {
   async function submitLogin(values: z.infer<typeof loginFormSchema>) {
     try {
       await auth.login(values.email, values.password);
-      toast({ title: "Welcome back", description: "Your saved tracking data is loaded." });
+      toast({ 
+        title: t("auth.welcomeBack"), 
+        description: t("auth.welcomeBackDescription") 
+      });
     } catch (error) {
-      toast({ title: "Login failed", description: cleanError(error), variant: "destructive" });
+      toast({ 
+        title: t("auth.loginFailed"), 
+        description: cleanError(error), 
+        variant: "destructive" 
+      });
     }
   }
 
   async function submitRegister(values: z.infer<typeof registerFormSchema>) {
     try {
       setRegisterLoading(true);
-      await auth.register(values.name, values.email, values.password);
-      toast({ title: "Account created", description: "Your private workspace is ready." });
+      await auth.register(
+        values.name, 
+        values.email, 
+        values.password,
+        values.phone,
+        values.countryCode
+      );
+      toast({ 
+        title: t("auth.accountCreated"), 
+        description: t("auth.accountCreatedDescription") 
+      });
     } catch (error) {
-      toast({ title: "Could not create account", description: cleanError(error), variant: "destructive" });
+      toast({ 
+        title: t("auth.createAccountFailed"), 
+        description: cleanError(error), 
+        variant: "destructive" 
+      });
     } finally {
       setRegisterLoading(false);
     }
@@ -65,7 +95,10 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-background text-foreground grid lg:grid-cols-[1fr_420px]">
       <section className="hidden lg:flex flex-col justify-between border-r border-border bg-sidebar p-10">
-        <LogoWordmark />
+        <div className="flex items-center justify-between">
+          <LogoWordmark />
+          <LanguageSelector />
+        </div>
         <div className="max-w-xl">
           <p className="text-xs uppercase tracking-[0.24em] text-primary">Private productivity tracking</p>
           <h1 className="mt-4 text-xl font-semibold tracking-tight">
@@ -94,14 +127,15 @@ export default function Auth() {
       <main className="flex min-h-screen items-center justify-center p-5">
         <Card className="w-full max-w-md border-card-border bg-card" data-testid="card-auth">
           <CardHeader>
-            <div className="lg:hidden mb-4">
+            <div className="lg:hidden mb-4 flex items-center justify-between">
               <LogoWordmark />
+              <LanguageSelector />
             </div>
-            <CardTitle>{mode === "login" ? "Sign in" : "Create account"}</CardTitle>
+            <CardTitle>{mode === "login" ? t("auth.signIn") : t("auth.createAccount")}</CardTitle>
             <CardDescription>
               {mode === "login"
-                ? "Sign in to your account to load saved tasks."
-                : "New users get their own private task database view."}
+                ? t("auth.loginDescription")
+                : t("auth.registerDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -113,7 +147,7 @@ export default function Auth() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t("auth.email")}</FormLabel>
                         <FormControl>
                           <Input {...field} type="email" autoComplete="email" data-testid="input-login-email" />
                         </FormControl>
@@ -126,7 +160,7 @@ export default function Auth() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t("auth.password")}</FormLabel>
                         <FormControl>
                           <Input {...field} type="password" autoComplete="current-password" data-testid="input-login-password" />
                         </FormControl>
@@ -135,7 +169,7 @@ export default function Auth() {
                     )}
                   />
                   <Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting} data-testid="button-login">
-                    {loginForm.formState.isSubmitting ? "Signing in..." : "Sign in"}
+                    {loginForm.formState.isSubmitting ? t("common.loading") : t("auth.signIn")}
                   </Button>
                 </form>
               </Form>
@@ -147,9 +181,9 @@ export default function Auth() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel>{t("auth.name")}</FormLabel>
                         <FormControl>
-                          <Input {...field} autoComplete="name" placeholder="Your name" data-testid="input-register-name" />
+                          <Input {...field} autoComplete="name" placeholder={t("auth.namePlaceholder")} data-testid="input-register-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -160,9 +194,27 @@ export default function Auth() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t("auth.email")}</FormLabel>
                         <FormControl>
                           <Input {...field} type="email" autoComplete="email" placeholder="you@example.com" data-testid="input-register-email" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("auth.phone")}</FormLabel>
+                        <FormControl>
+                          <PhoneInput
+                            value={field.value || ""}
+                            onValueChange={field.onChange}
+                            countryCode={registerForm.watch("countryCode") || "+212"}
+                            onCountryCodeChange={(code) => registerForm.setValue("countryCode", code)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -173,16 +225,16 @@ export default function Auth() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t("auth.password")}</FormLabel>
                         <FormControl>
-                          <Input {...field} type="password" autoComplete="new-password" placeholder="At least 6 characters" data-testid="input-register-password" />
+                          <Input {...field} type="password" autoComplete="new-password" placeholder={t("auth.passwordPlaceholder")} data-testid="input-register-password" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <Button type="submit" className="w-full" disabled={registerLoading} data-testid="button-register">
-                    {registerLoading ? "Creating..." : "Create account"}
+                    {registerLoading ? t("common.loading") : t("auth.createAccount")}
                   </Button>
                 </form>
               </Form>
@@ -195,7 +247,7 @@ export default function Auth() {
               onClick={() => setMode(mode === "login" ? "register" : "login")}
               data-testid="button-toggle-auth-mode"
             >
-              {mode === "login" ? "Create a new account" : "I already have an account"}
+              {mode === "login" ? t("auth.createAccount") : t("auth.alreadyHaveAccount")}
             </Button>
           </CardContent>
         </Card>
