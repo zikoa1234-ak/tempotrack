@@ -40,18 +40,14 @@ export const tasks = sqliteTable("tasks", {
   createdAt: text("created_at").notNull(),
 });
 
-export const insertTaskSchema = createInsertSchema(tasks).omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-}).extend({
+export const insertTaskSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  notes: z.string().max(2000).nullable().optional(),
   period: z.enum(["day", "month", "year"]),
   status: z.enum(["todo", "in_progress", "done", "overdue"]).default("todo"),
-  priority: z.enum(["low", "medium", "high"]).default("medium"),
   progress: z.number().int().min(0).max(100).default(0),
-  title: z.string().min(1, "Title is required").max(200),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
   category: z.string().min(1).max(60).default("general"),
-  notes: z.string().max(2000).nullable().optional(),
   dueDate: z.string().nullable().optional(),
   startDate: z.string().nullable().optional(),
   endDate: z.string().nullable().optional(),
@@ -71,7 +67,32 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   path: ["endDate"],
 });
 
-export const updateTaskSchema = insertTaskSchema.partial();
+export const updateTaskSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200).optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  period: z.enum(["day", "month", "year"]).optional(),
+  status: z.enum(["todo", "in_progress", "done", "overdue"]).optional(),
+  progress: z.number().int().min(0).max(100).optional(),
+  priority: z.enum(["low", "medium", "high"]).optional(),
+  category: z.string().min(1).max(60).optional(),
+  dueDate: z.string().nullable().optional(),
+  startDate: z.string().nullable().optional(),
+  endDate: z.string().nullable().optional(),
+  timeEstimate: z.number().int().min(0).nullable().optional(),
+  metricTarget: z.number().int().min(0).nullable().optional(),
+  metricUnit: z.string().max(20).nullable().optional(),
+}).refine(data => {
+  // Validate that endDate is not before startDate if both are provided
+  if (data.startDate && data.endDate) {
+    const start = new Date(data.startDate + "T00:00:00");
+    const end = new Date(data.endDate + "T23:59:59");
+    return end >= start;
+  }
+  return true;
+}, {
+  message: "End date must be after or equal to start date",
+  path: ["endDate"],
+});
 
 export const registerSchema = z.object({
   name: z.string().min(1, "Name is required").max(80),
