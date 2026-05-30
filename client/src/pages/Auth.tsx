@@ -22,6 +22,17 @@ export default function Auth() {
   const [mode, setMode] = useState<Mode>("login");
   const [registerLoading, setRegisterLoading] = useState(false);
 
+  // Simple state for registration form
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+212");
+
+  // Simple state for login form
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
   const auth = useAuth();
   const { t } = useI18n();
   const { toast } = useToast();
@@ -45,15 +56,23 @@ export default function Auth() {
   // Reset form when switching modes
   useEffect(() => {
     if (mode === "login") {
-      registerForm.reset();
+      // Reset register form
+      setName("");
+      setEmail("");
+      setPassword("");
+      setPhone("");
+      setCountryCode("+212");
     } else {
-      loginForm.reset({ email: "", password: "" });
+      // Reset login form
+      setLoginEmail("");
+      setLoginPassword("");
     }
-  }, [mode, loginForm, registerForm]);
+  }, [mode]);
 
-  async function submitLogin(values: z.infer<typeof loginFormSchema>) {
+  async function submitLogin(e: React.FormEvent) {
+    e.preventDefault();
     try {
-      await auth.login(values.email, values.password);
+      await auth.login(loginEmail, loginPassword);
       toast({ 
         title: t("auth.welcomeBack"), 
         description: t("auth.welcomeBackDescription") 
@@ -67,16 +86,11 @@ export default function Auth() {
     }
   }
 
-  async function submitRegister(values: z.infer<typeof registerFormSchema>) {
+  async function submitRegister(e: React.FormEvent) {
+    e.preventDefault();
     try {
       setRegisterLoading(true);
-      await auth.register(
-        values.name, 
-        values.email, 
-        values.password,
-        values.phone,
-        values.countryCode
-      );
+      await auth.register(name, email, password, phone, countryCode);
       toast({ 
         title: t("auth.accountCreated"), 
         description: t("auth.accountCreatedDescription") 
@@ -141,7 +155,7 @@ export default function Auth() {
           <CardContent>
             {mode === "login" ? (
               <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(submitLogin)} className="space-y-4">
+                <form onSubmit={submitLogin} className="space-y-4">
                   <FormField
                     control={loginForm.control}
                     name="email"
@@ -153,11 +167,8 @@ export default function Auth() {
                             type="email"
                             autoComplete="email" 
                             data-testid="input-login-email"
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            ref={field.ref}
-                            name={field.name}
+                            value={loginEmail}
+                            onChange={(e) => setLoginEmail(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -175,11 +186,8 @@ export default function Auth() {
                             type="password"
                             autoComplete="current-password" 
                             data-testid="input-login-password"
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            ref={field.ref}
-                            name={field.name}
+                            value={loginPassword}
+                            onChange={(e) => setLoginPassword(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -193,7 +201,7 @@ export default function Auth() {
               </Form>
             ) : (
               <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(submitRegister)} className="space-y-4">
+                <form onSubmit={submitRegister} className="space-y-4">
                   <FormField
                     control={registerForm.control}
                     name="name"
@@ -206,11 +214,8 @@ export default function Auth() {
                             autoComplete="name" 
                             placeholder={t("auth.namePlaceholder")} 
                             data-testid="input-register-name"
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            ref={field.ref}
-                            name={field.name}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -229,11 +234,8 @@ export default function Auth() {
                             autoComplete="email" 
                             placeholder="you@example.com" 
                             data-testid="input-register-email"
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            ref={field.ref}
-                            name={field.name}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -248,10 +250,10 @@ export default function Auth() {
                         <FormLabel>{t("auth.phone")}</FormLabel>
                         <FormControl>
                           <PhoneInput
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            countryCode={registerForm.watch("countryCode") || "+212"}
-                            onCountryCodeChange={(code) => registerForm.setValue("countryCode", code)}
+                            value={phone}
+                            onChange={setPhone}
+                            countryCode={countryCode}
+                            onCountryCodeChange={setCountryCode}
                           />
                         </FormControl>
                         <FormMessage />
@@ -270,11 +272,8 @@ export default function Auth() {
                             autoComplete="new-password" 
                             placeholder={t("auth.passwordPlaceholder")} 
                             data-testid="input-register-password"
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            ref={field.ref}
-                            name={field.name}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -313,3 +312,4 @@ function cleanError(error: unknown): string {
     return message.replace(/^\d+:\s*/, "");
   }
 }
+
