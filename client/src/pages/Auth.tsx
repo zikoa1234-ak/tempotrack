@@ -149,7 +149,16 @@ export default function Auth() {
                       <FormItem>
                         <FormLabel>{t("auth.email")}</FormLabel>
                         <FormControl>
-                          <Input {...field} type="email" autoComplete="email" data-testid="input-login-email" />
+                          <Input 
+                            type="email"
+                            autoComplete="email" 
+                            data-testid="input-login-email"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            name={field.name}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -162,7 +171,16 @@ export default function Auth() {
                       <FormItem>
                         <FormLabel>{t("auth.password")}</FormLabel>
                         <FormControl>
-                          <Input {...field} type="password" autoComplete="current-password" data-testid="input-login-password" />
+                          <Input 
+                            type="password"
+                            autoComplete="current-password" 
+                            data-testid="input-login-password"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            name={field.name}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -183,7 +201,17 @@ export default function Auth() {
                       <FormItem>
                         <FormLabel>{t("auth.name")}</FormLabel>
                         <FormControl>
-                          <Input {...field} autoComplete="name" placeholder={t("auth.namePlaceholder")} data-testid="input-register-name" />
+                          <Input 
+                            type="text"
+                            autoComplete="name" 
+                            placeholder={t("auth.namePlaceholder")} 
+                            data-testid="input-register-name"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            name={field.name}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -196,7 +224,17 @@ export default function Auth() {
                       <FormItem>
                         <FormLabel>{t("auth.email")}</FormLabel>
                         <FormControl>
-                          <Input {...field} type="email" autoComplete="email" placeholder="you@example.com" data-testid="input-register-email" />
+                          <Input 
+                            type="email"
+                            autoComplete="email" 
+                            placeholder="you@example.com" 
+                            data-testid="input-register-email"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            name={field.name}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -227,7 +265,17 @@ export default function Auth() {
                       <FormItem>
                         <FormLabel>{t("auth.password")}</FormLabel>
                         <FormControl>
-                          <Input {...field} type="password" autoComplete="new-password" placeholder={t("auth.passwordPlaceholder")} data-testid="input-register-password" />
+                          <Input 
+                            type="password"
+                            autoComplete="new-password" 
+                            placeholder={t("auth.passwordPlaceholder")} 
+                            data-testid="input-register-password"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            name={field.name}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
