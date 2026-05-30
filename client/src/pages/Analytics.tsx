@@ -18,12 +18,18 @@ import { AppLayout } from "@/components/AppLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTasks, focusScore } from "@/lib/tasks";
 import { useChartColors } from "@/lib/chartColors";
-
-const PERIOD_LABEL: Record<string, string> = { day: "Day", month: "Month", year: "Year" };
+import { useI18n } from "@/lib/i18n";
 
 export default function Analytics() {
   const { data: tasks, isLoading } = useTasks();
   const colors = useChartColors();
+  const { t } = useI18n();
+
+  const PERIOD_LABEL: Record<string, string> = { 
+    day: t("tasks.day"), 
+    month: t("tasks.month"), 
+    year: t("tasks.year") 
+  };
 
   const completionByCategory = useMemo(() => {
     if (!tasks) return [];
@@ -61,12 +67,12 @@ export default function Analytics() {
     return Array.from({ length: 7 }).map((_, i) => {
       const drift = Math.sin(i * 0.9) * 7 + (i / 6) * 6;
       return {
-        week: `W${i + 1}`,
+        week: `${t("analytics.week")} ${i + 1}`,
         Completed: Math.max(0, Math.round(baseDone * 0.4 + drift + i * 0.6)),
         "Avg progress": Math.max(0, Math.min(100, Math.round(baseProgress * 0.6 + drift + i * 1.2))),
       };
     });
-  }, [tasks]);
+  }, [tasks, t]);
 
   const horizonHealth = useMemo(() => {
     if (!tasks) return [];
@@ -82,17 +88,19 @@ export default function Analytics() {
         fill: [colors.chart1, colors.chart2, colors.chart3][i] ?? colors.primary,
       };
     });
-  }, [tasks, colors]);
+  }, [tasks, colors, t]);
 
   return (
     <AppLayout
-      title="Analytics"
-      subtitle="A deeper look at how your tempo is trending."
+      title={t("analytics.analytics")}
+      subtitle={t("analytics.subtitle")}
     >
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="rounded-xl border border-card-border bg-card p-5 xl:col-span-2" data-testid="card-tempo-trend">
-          <h2 className="text-base font-semibold tracking-tight">Tempo trend</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Completed tasks and average progress over the last 7 weeks.</p>
+          <h2 className="text-base font-semibold tracking-tight">{t("analytics.tempoTrend")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t("analytics.completedTasksAndAvgProgress")}
+          </p>
           <div className="mt-4 h-[300px]">
             {isLoading ? (
               <Skeleton className="h-full w-full" />
@@ -133,8 +141,10 @@ export default function Analytics() {
         </div>
 
         <div className="rounded-xl border border-card-border bg-card p-5" data-testid="card-focus-score">
-          <h2 className="text-base font-semibold tracking-tight">Focus score</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">A weighted view of how steady your tempo is.</p>
+          <h2 className="text-base font-semibold tracking-tight">{t("analytics.focusScore")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t("analytics.weightedView")}
+          </p>
           <div className="mt-4 h-[300px] relative">
             {isLoading ? (
               <Skeleton className="h-full w-full" />
@@ -164,8 +174,10 @@ export default function Analytics() {
 
       <section className="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div className="rounded-xl border border-card-border bg-card p-5" data-testid="card-category-completion">
-          <h2 className="text-base font-semibold tracking-tight">Completion by category</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Where you finish, and where things stall.</p>
+          <h2 className="text-base font-semibold tracking-tight">{t("analytics.completionByCategory")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t("analytics.whereYouFinish")}
+          </p>
           <div className="mt-4 h-[280px]">
             {isLoading ? (
               <Skeleton className="h-full w-full" />
@@ -195,8 +207,10 @@ export default function Analytics() {
         </div>
 
         <div className="rounded-xl border border-card-border bg-card p-5" data-testid="card-horizon-health">
-          <h2 className="text-base font-semibold tracking-tight">Horizon health</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Completion percentage per tracking horizon.</p>
+          <h2 className="text-base font-semibold tracking-tight">{t("analytics.horizonHealth")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t("analytics.completionPercentage")}
+          </p>
           <div className="mt-4 h-[280px]">
             {isLoading ? (
               <Skeleton className="h-full w-full" />
@@ -241,13 +255,13 @@ export default function Analytics() {
               data-testid={`card-period-${String(row.name).toLowerCase()}`}
             >
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {row.name} horizon
+                {row.name} {t("analytics.horizon")}
               </p>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-xl font-semibold tabular-nums">{row.avg}%</span>
-                <span className="text-xs text-muted-foreground">avg. progress</span>
+                <span className="text-xs text-muted-foreground">{t("analytics.avg")}</span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">{row.total} task{row.total === 1 ? "" : "s"} tracked</p>
+              <p className="mt-1 text-xs text-muted-foreground">{row.total} {t("analytics.tasksTracked")}</p>
             </div>
           )
         )}
@@ -257,9 +271,10 @@ export default function Analytics() {
 }
 
 function EmptyChart() {
+  const { t } = useI18n();
   return (
     <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-      Not enough data yet.
+      {t("analytics.notEnoughData")}
     </div>
   );
 }

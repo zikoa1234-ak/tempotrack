@@ -252,6 +252,39 @@ export function TaskDialog({
             </div>
           </div>
 
+          {/* Start Date and End Date */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="startDate" className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                {t("tasks.startDate")}
+              </Label>
+              <Input
+                id="startDate"
+                type="date"
+                data-testid="input-start-date"
+                {...form.register("startDate")}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="endDate" className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                {t("tasks.endDate")}
+              </Label>
+              <Input
+                id="endDate"
+                type="date"
+                data-testid="input-end-date"
+                {...form.register("endDate")}
+              />
+              {durationDisplay && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("tasks.duration")}: {durationDisplay}
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* Time Estimate and Progress */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

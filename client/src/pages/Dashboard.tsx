@@ -37,14 +37,17 @@ import {
   isOverdue,
   focusScore,
   formatDate,
+  periodLabel,
 } from "@/lib/tasks";
 import { useChartColors } from "@/lib/chartColors";
+import { useI18n } from "@/lib/i18n";
 import type { Task } from "@shared/schema";
 
 export default function Dashboard() {
   const { data: tasks, isLoading } = useTasks();
   const [dialogOpen, setDialogOpen] = useState(false);
   const colors = useChartColors();
+  const { t } = useI18n();
   const palette = [colors.chart1, colors.chart2, colors.chart3, colors.chart4, colors.chart5, colors.chart6];
 
   const stats = useMemo(() => {
@@ -60,12 +63,12 @@ export default function Dashboard() {
   const periodData = useMemo(() => {
     if (!tasks) return [];
     const horizons = [
-      { key: "day", label: "Day", includes: ["day"] },
-      { key: "month", label: "Month", includes: ["day", "month"] },
-      { key: "year", label: "Year", includes: ["day", "month", "year"] },
+      { key: "day", label: t("tasks.day") },
+      { key: "month", label: t("tasks.month") },
+      { key: "year", label: t("tasks.year") },
     ] as const;
     return horizons.map((horizon) => {
-      const subset = tasks.filter((t) => horizon.includes.includes(t.period as any));
+      const subset = tasks.filter((t) => horizon.key === t.period);
       const total = subset.length;
       const done = subset.filter((t) => t.status === "done").length;
       const inProgress = subset.filter((t) => t.status === "in_progress").length;
@@ -73,7 +76,7 @@ export default function Dashboard() {
       const avgProgress = total === 0 ? 0 : Math.round(subset.reduce((s, t) => s + t.progress, 0) / total);
       return { period: horizon.label, done, "In progress": inProgress, "To do": todo, avgProgress, total };
     });
-  }, [tasks]);
+  }, [tasks, t]);
 
   const categoryData = useMemo(() => {
     if (!tasks) return [];
@@ -88,13 +91,13 @@ export default function Dashboard() {
     return order.map((p) => {
       const subset = tasks.filter((t) => t.priority === p);
       return {
-        priority: p.charAt(0).toUpperCase() + p.slice(1),
+        priority: t(`tasks.${p}`),
         done: subset.filter((t) => t.status === "done").length,
         active: subset.filter((t) => t.status !== "done").length,
         total: subset.length,
       };
     });
-  }, [tasks]);
+  }, [tasks, t]);
 
   const score = useMemo(() => (tasks ? focusScore(tasks) : 0), [tasks]);
 
@@ -108,8 +111,8 @@ export default function Dashboard() {
 
   return (
     <AppLayout
-      title="Dashboard"
-      subtitle="A clear pulse on day, month, and year."
+      title={t("dashboard.dashboard")}
+      subtitle={t("dashboard.subtitle")}
       actions={
         <Button
           size="sm"
@@ -118,7 +121,7 @@ export default function Dashboard() {
           className="gap-1.5"
         >
           <Plus className="h-4 w-4" />
-          New task
+          {t("tasks.newTask")}
         </Button>
       }
     >
@@ -134,32 +137,32 @@ export default function Dashboard() {
         ) : (
           <>
             <StatCard
-              label="Completion"
+              label={t("dashboard.completion")}
               value={`${stats.completionRate}%`}
-              delta={`${stats.done} of ${stats.total} tasks done`}
+              delta={t("dashboard.ofTasksDone", { total: stats.total })}
               icon={CheckCircle2}
               tone="positive"
               testId="card-stat-completion"
             />
             <StatCard
-              label="Focus score"
+              label={t("dashboard.focusScore")}
               value={score}
-              delta="Completion · momentum · on-time"
+              delta={t("dashboard.momentum")}
               icon={Sparkles}
               testId="card-stat-focus"
             />
             <StatCard
-              label="High priority"
+              label={t("dashboard.highPriority")}
               value={stats.highPriority}
-              delta="Active and important"
+              delta={t("dashboard.activeAndImportant")}
               icon={Flame}
               tone="warning"
               testId="card-stat-high-priority"
             />
             <StatCard
-              label="Overdue"
+              label={t("dashboard.overdue")}
               value={stats.overdue}
-              delta={stats.overdue > 0 ? "Needs attention" : "All clear"}
+              delta={stats.overdue > 0 ? t("dashboard.needsAttention") : t("dashboard.allClear")}
               icon={AlertTriangle}
               tone={stats.overdue > 0 ? "negative" : "default"}
               testId="card-stat-overdue"
@@ -177,9 +180,9 @@ export default function Dashboard() {
         >
           <div className="flex items-baseline justify-between">
             <div>
-              <h2 className="text-base font-semibold tracking-tight">Progress by period</h2>
+              <h2 className="text-base font-semibold tracking-tight">{t("dashboard.progressByPeriod")}</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Cumulative view: day, month-to-date, and full year.
+                {t("dashboard.cumulativeView")}
               </p>
             </div>
           </div>
@@ -206,9 +209,9 @@ export default function Dashboard() {
                     wrapperStyle={{ fontSize: 12, color: colors.mutedForeground, paddingTop: 6 }}
                     iconType="circle"
                   />
-                  <Bar dataKey="done" name="Done" stackId="a" fill={colors.chart1} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="In progress" stackId="a" fill={colors.chart2} />
-                  <Bar dataKey="To do" stackId="a" fill={colors.chart3} radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="done" name={t("tasks.done")} stackId="a" fill={colors.chart1} radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="In progress" name={t("tasks.inProgress")} stackId="a" fill={colors.chart2} />
+                  <Bar dataKey="To do" name={t("tasks.todo")} stackId="a" fill={colors.chart3} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -220,13 +223,13 @@ export default function Dashboard() {
           className="rounded-xl border border-card-border bg-card p-5"
           data-testid="card-chart-category"
         >
-          <h2 className="text-base font-semibold tracking-tight">By category</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Where your focus lives.</p>
+          <h2 className="text-base font-semibold tracking-tight">{t("dashboard.byCategory")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.whereYourFocusLives")}</p>
           <div className="mt-4 h-[220px]">
             {isLoading ? (
               <Skeleton className="h-full w-full" />
             ) : categoryData.length === 0 ? (
-              <EmptyState label="No tasks yet" />
+              <EmptyState label={t("dashboard.noTasksYet")} />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -277,8 +280,8 @@ export default function Dashboard() {
           className="rounded-xl border border-card-border bg-card p-5"
           data-testid="card-chart-priority"
         >
-          <h2 className="text-base font-semibold tracking-tight">Priority pulse</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Done vs. active, labeled by total tasks.</p>
+          <h2 className="text-base font-semibold tracking-tight">{t("dashboard.priorityPulse")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.doneVsActive")}</p>
           <div className="mt-4 h-[220px]">
             {isLoading ? (
               <Skeleton className="h-full w-full" />
@@ -299,8 +302,8 @@ export default function Dashboard() {
                     cursor={{ fill: colors.accent, opacity: 0.4 }}
                   />
                   <Legend wrapperStyle={{ fontSize: 12, color: colors.mutedForeground, paddingTop: 6 }} iconType="circle" />
-                  <Bar dataKey="done" name="Done" stackId="a" fill={colors.chart1} />
-                  <Bar dataKey="active" name="Active" stackId="a" fill={colors.chart4} radius={[0, 6, 6, 0]}>
+                  <Bar dataKey="done" name={t("tasks.done")} stackId="a" fill={colors.chart1} />
+                  <Bar dataKey="active" name={t("dashboard.inProgress")} stackId="a" fill={colors.chart4} radius={[0, 6, 6, 0]}>
                     <LabelList dataKey="total" position="right" fill={colors.mutedForeground} fontSize={11} />
                   </Bar>
                 </BarChart>
@@ -311,8 +314,8 @@ export default function Dashboard() {
 
         {/* Avg progress trend */}
         <div className="rounded-xl border border-card-border bg-card p-5" data-testid="card-chart-trend">
-          <h2 className="text-base font-semibold tracking-tight">Avg. progress</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Across each tracking horizon.</p>
+          <h2 className="text-base font-semibold tracking-tight">{t("dashboard.avgProgress")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.acrossTrackingHorizon")}</p>
           <div className="mt-4 h-[220px]">
             {isLoading ? (
               <Skeleton className="h-full w-full" />
@@ -346,15 +349,15 @@ export default function Dashboard() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold tracking-tight">Up next</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Soonest target dates first.</p>
+              <h2 className="text-base font-semibold tracking-tight">{t("dashboard.upNext")}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.soonestTargetDates")}</p>
             </div>
             <Link
               href="/tasks"
               className="text-xs text-primary hover:underline inline-flex items-center gap-1"
               data-testid="link-view-all-tasks"
             >
-              View all <ArrowRight className="h-3 w-3" />
+              {t("dashboard.viewAll")} <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
           <ul className="mt-3 flex-1 divide-y divide-border">
@@ -367,7 +370,7 @@ export default function Dashboard() {
               ))
             ) : upcoming.length === 0 ? (
               <li className="py-6">
-                <EmptyState label="Nothing scheduled" />
+                <EmptyState label={t("dashboard.nothingScheduled")} />
               </li>
             ) : (
               upcoming.map((t) => <UpcomingRow key={t.id} task={t} />)
@@ -382,7 +385,10 @@ export default function Dashboard() {
 }
 
 function UpcomingRow({ task }: { task: Task }) {
+  const { t } = useI18n();
   const overdue = isOverdue(task);
+  const periodText = periodLabel(task.period);
+  
   return (
     <li className="py-2.5" data-testid={`row-upcoming-${task.id}`}>
       <div className="flex items-start justify-between gap-3">
@@ -390,10 +396,10 @@ function UpcomingRow({ task }: { task: Task }) {
           <p className="truncate text-sm font-medium">{task.title}</p>
           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
             <Badge variant="outline" className="font-normal capitalize" data-testid={`badge-period-${task.id}`}>
-              {task.period}
+              {periodText}
             </Badge>
             <span className={overdue ? "text-destructive" : ""}>
-              {overdue ? "Overdue · " : ""}{formatDate(task.dueDate)}
+              {overdue ? t("tasks.overdue") : ""}{formatDate(task.dueDate)}
             </span>
           </div>
         </div>

@@ -211,7 +211,7 @@ export default function Auth() {
                         <FormControl>
                           <PhoneInput
                             value={field.value || ""}
-                            onValueChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             countryCode={registerForm.watch("countryCode") || "+212"}
                             onCountryCodeChange={(code) => registerForm.setValue("countryCode", code)}
                           />

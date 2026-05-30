@@ -58,6 +58,17 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   timeEstimate: z.number().int().min(0).nullable().optional(),
   metricTarget: z.number().int().min(0).nullable().optional(),
   metricUnit: z.string().max(20).nullable().optional(),
+}).refine(data => {
+  // Validate that endDate is not before startDate if both are provided
+  if (data.startDate && data.endDate) {
+    const start = new Date(data.startDate + "T00:00:00");
+    const end = new Date(data.endDate + "T23:59:59");
+    return end >= start;
+  }
+  return true;
+}, {
+  message: "End date must be after or equal to start date",
+  path: ["endDate"],
 });
 
 export const updateTaskSchema = insertTaskSchema.partial();
@@ -93,3 +104,4 @@ export const CATEGORIES = [
   "Finance",
   "Creative",
 ] as const;
+
