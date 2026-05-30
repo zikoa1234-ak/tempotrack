@@ -41,6 +41,7 @@ import {
   priorityLabel,
 } from "@/lib/tasks";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/lib/i18n";
 import type { Task } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -56,9 +57,11 @@ const STATUS_TONE: Record<string, string> = {
   done: "bg-[hsl(var(--chart-1))]/15 text-[hsl(var(--chart-1))] border-[hsl(var(--chart-1))]/30",
   in_progress: "bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30",
   todo: "bg-muted text-muted-foreground border-border",
+  overdue: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
 export default function Tasks() {
+  const { t } = useI18n();
   const { data: tasks, isLoading } = useTasks();
   const deleteMutation = useDeleteTask();
   const updateMutation = useUpdateTask();
@@ -114,40 +117,48 @@ export default function Tasks() {
       patch: { status: next, progress: next === "done" ? 100 : Math.min(t.progress, 95) },
     });
     toast({
-      title: next === "done" ? "Marked done" : "Reopened",
+      title: next === "done" ? t("tasks.markedDone") : t("tasks.reopened"),
       description: t.title,
     });
   }
 
   async function handleDelete(t: Task) {
     await deleteMutation.mutateAsync(t.id);
-    toast({ title: "Task deleted", description: t.title });
+    toast({ title: t("tasks.taskDeleted"), description: t.title });
   }
 
   return (
     <AppLayout
-      title="Tasks"
-      subtitle="Capture, organize, and complete what matters."
+      title={t("tasks.tasks")}
+      subtitle={t("tasks.subtitle")}
       actions={
         <Button size="sm" onClick={openNew} data-testid="button-new-task" className="gap-1.5">
-          <Plus className="h-4 w-4" /> New task
+          <Plus className="h-4 w-4" /> {t("tasks.newTask")}
         </Button>
       }
     >
       <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <TabsList data-testid="tabs-period">
-            <TabsTrigger value="all" data-testid="tab-all">All <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{counts.all}</span></TabsTrigger>
-            <TabsTrigger value="day" data-testid="tab-day">Day <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{counts.day}</span></TabsTrigger>
-            <TabsTrigger value="month" data-testid="tab-month">Month <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{counts.month}</span></TabsTrigger>
-            <TabsTrigger value="year" data-testid="tab-year">Year <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{counts.year}</span></TabsTrigger>
+            <TabsTrigger value="all" data-testid="tab-all">
+              {t("common.all")} <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{counts.all}</span>
+            </TabsTrigger>
+            <TabsTrigger value="day" data-testid="tab-day">
+              {t("tasks.day")} <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{counts.day}</span>
+            </TabsTrigger>
+            <TabsTrigger value="month" data-testid="tab-month">
+              {t("tasks.month")} <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{counts.month}</span>
+            </TabsTrigger>
+            <TabsTrigger value="year" data-testid="tab-year">
+              {t("tasks.year")} <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{counts.year}</span>
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Search tasks…"
+                placeholder={t("common.search")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-8 w-48"
@@ -155,21 +166,21 @@ export default function Tasks() {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36" data-testid="select-filter-status"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-36" data-testid="select-filter-status"><SelectValue placeholder={t("tasks.status")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="todo">To do</SelectItem>
-                <SelectItem value="in_progress">In progress</SelectItem>
-                <SelectItem value="done">Done</SelectItem>
+                <SelectItem value="all">{t("common.all")} {t("tasks.status").toLowerCase()}</SelectItem>
+                <SelectItem value="todo">{t("tasks.todo")}</SelectItem>
+                <SelectItem value="in_progress">{t("tasks.inProgress")}</SelectItem>
+                <SelectItem value="done">{t("tasks.done")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-36" data-testid="select-filter-priority"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-36" data-testid="select-filter-priority"><SelectValue placeholder={t("tasks.priority")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All priorities</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="all">{t("common.all")} {t("tasks.priority").toLowerCase()}</SelectItem>
+                <SelectItem value="high">{t("tasks.high")}</SelectItem>
+                <SelectItem value="medium">{t("tasks.medium")}</SelectItem>
+                <SelectItem value="low">{t("tasks.low")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -224,6 +235,7 @@ function TaskRow({
   onDelete: () => void;
   onMarkDone: () => void;
 }) {
+  const { t } = useI18n();
   const overdue = isOverdue(task);
   const done = task.status === "done";
 
@@ -239,7 +251,7 @@ function TaskRow({
         <button
           type="button"
           onClick={onMarkDone}
-          aria-label={done ? "Reopen task" : "Mark task done"}
+          aria-label={done ? t("tasks.reopenTask") : t("tasks.markTaskDone")}
           data-testid={`button-toggle-done-${task.id}`}
           className={cn(
             "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
@@ -263,21 +275,21 @@ function TaskRow({
               {task.title}
             </h3>
             <Badge variant="outline" className="capitalize font-normal" data-testid={`badge-period-${task.id}`}>
-              {task.period}
+              {t(`tasks.${task.period}`)}
             </Badge>
             <Badge
               variant="outline"
               className={cn("capitalize font-normal", PRIORITY_TONE[task.priority])}
               data-testid={`badge-priority-${task.id}`}
             >
-              {priorityLabel(task.priority)}
+              {t(`tasks.${task.priority}`)}
             </Badge>
             <Badge
               variant="outline"
               className={cn("font-normal", STATUS_TONE[task.status])}
               data-testid={`badge-status-${task.id}`}
             >
-              {statusLabel(task.status)}
+              {statusLabel(task.status) === "Overdue" ? t("tasks.overdue") : t(`tasks.${task.status === "in_progress" ? "inProgress" : task.status}`)}
             </Badge>
             <span className="text-xs text-muted-foreground" data-testid={`text-category-${task.id}`}>
               {task.category}
@@ -292,17 +304,17 @@ function TaskRow({
             {task.dueDate && (
               <span className={cn("inline-flex items-center gap-1.5", overdue && "text-destructive")}>
                 <CalendarDays className="h-3.5 w-3.5" />
-                {overdue ? "Overdue · " : ""}{formatDate(task.dueDate)}
+                {overdue ? `${t("tasks.overdue")} · ` : ""}{formatDate(task.dueDate)}
               </span>
             )}
             {task.metricTarget != null && (
               <span className="inline-flex items-center gap-1.5">
                 <Sparkle className="h-3.5 w-3.5" />
-                Target {task.metricTarget}{task.metricUnit ? ` ${task.metricUnit}` : ""}
+                {t("tasks.target")} {task.metricTarget}{task.metricUnit ? ` ${task.metricUnit}` : ""}
               </span>
             )}
             {task.timeEstimate != null && task.timeEstimate > 0 && (
-              <span>{task.timeEstimate} min</span>
+              <span>{task.timeEstimate} {t("tasks.min")}</span>
             )}
           </div>
 
@@ -318,7 +330,7 @@ function TaskRow({
           <Button
             size="icon"
             variant="ghost"
-            aria-label="Edit task"
+            aria-label={t("tasks.edit")}
             onClick={onEdit}
             data-testid={`button-edit-${task.id}`}
           >
@@ -329,7 +341,7 @@ function TaskRow({
               <Button
                 size="icon"
                 variant="ghost"
-                aria-label="Delete task"
+                aria-label={t("tasks.delete")}
                 data-testid={`button-delete-${task.id}`}
               >
                 <Trash2 className="h-4 w-4" />
@@ -337,19 +349,19 @@ function TaskRow({
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete this task?</AlertDialogTitle>
+                <AlertDialogTitle>{t("tasks.deleteConfirm")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  "{task.title}" will be removed from your tracker. This can't be undone.
+                  "{task.title}" {t("tasks.deleteDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                <AlertDialogCancel data-testid="button-cancel-delete">{t("common.cancel")}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={onDelete}
                   data-testid="button-confirm-delete"
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  Delete
+                  {t("common.delete")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -361,6 +373,7 @@ function TaskRow({
 }
 
 function EmptyTaskState({ onCreate, hasAny }: { onCreate: () => void; hasAny: boolean }) {
+  const { t } = useI18n();
   return (
     <div
       className="rounded-xl border border-dashed border-border bg-card/50 p-10 text-center"
@@ -370,16 +383,14 @@ function EmptyTaskState({ onCreate, hasAny }: { onCreate: () => void; hasAny: bo
         <Plus className="h-4 w-4" />
       </div>
       <h3 className="mt-3 text-sm font-semibold">
-        {hasAny ? "No tasks match these filters" : "Start tracking your tempo"}
+        {hasAny ? t("tasks.noMatches") : t("tasks.emptyTasks")}
       </h3>
       <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-        {hasAny
-          ? "Try clearing search or switching periods."
-          : "Add your first task to begin building daily, monthly, and yearly momentum."}
+        {hasAny ? t("tasks.tryClearingFilters") : t("tasks.emptyTasksDescription")}
       </p>
       {!hasAny && (
         <Button size="sm" className="mt-4" onClick={onCreate} data-testid="button-empty-create">
-          Create your first task
+          {t("tasks.createFirstTask")}
         </Button>
       )}
     </div>

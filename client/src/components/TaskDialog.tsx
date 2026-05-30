@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { calculateDuration } from "@/lib/tasks";
+import { Calendar, Target, Clock, BarChart3, Tag, Flag, CalendarDays } from "lucide-react";
 
 export function TaskDialog({
   open,
@@ -128,7 +129,7 @@ export function TaskDialog({
     } catch (e: any) {
       toast({ 
         title: t("errors.somethingWentWrong"), 
-        description: e?.message ?? t("errors.tryAgain"), 
+        description: e?.message ?? t("common.tryAgain"), 
         variant: "destructive" 
       });
     }
@@ -139,17 +140,23 @@ export function TaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg" data-testid="dialog-task">
+      <DialogContent className="max-w-md" data-testid="dialog-task">
         <DialogHeader>
-          <DialogTitle>{isEdit ? t("tasks.editTask") : t("tasks.newTask")}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {isEdit ? t("tasks.editTask") : t("tasks.newTask")}
+          </DialogTitle>
           <DialogDescription>
             {t("tasks.taskDialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Title - Most Important */}
           <div className="space-y-1.5">
-            <Label htmlFor="title">{t("tasks.title")}</Label>
+            <Label htmlFor="title" className="flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              {t("tasks.title")}
+            </Label>
             <Input
               id="title"
               autoFocus
@@ -164,60 +171,13 @@ export function TaskDialog({
             )}
           </div>
 
+          {/* Category and Priority in one row */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>{t("tasks.period")}</Label>
-              <Select
-                value={form.watch("period")}
-                onValueChange={(v) => form.setValue("period", v as any)}
-              >
-                <SelectTrigger data-testid="select-period">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">{t("tasks.day")}</SelectItem>
-                  <SelectItem value="month">{t("tasks.month")}</SelectItem>
-                  <SelectItem value="year">{t("tasks.year")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t("tasks.priority")}</Label>
-              <Select
-                value={form.watch("priority")}
-                onValueChange={(v) => form.setValue("priority", v as any)}
-              >
-                <SelectTrigger data-testid="select-priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">{t("tasks.low")}</SelectItem>
-                  <SelectItem value="medium">{t("tasks.medium")}</SelectItem>
-                  <SelectItem value="high">{t("tasks.high")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>{t("tasks.status")}</Label>
-              <Select
-                value={form.watch("status")}
-                onValueChange={(v) => form.setValue("status", v as any)}
-              >
-                <SelectTrigger data-testid="select-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todo">{t("tasks.todo")}</SelectItem>
-                  <SelectItem value="in_progress">{t("tasks.inProgress")}</SelectItem>
-                  <SelectItem value="done">{t("tasks.done")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t("tasks.category")}</Label>
+              <Label className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                {t("tasks.category")}
+              </Label>
               <Select
                 value={form.watch("category")}
                 onValueChange={(v) => form.setValue("category", v)}
@@ -236,65 +196,34 @@ export function TaskDialog({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="progress">{t("tasks.progress")}</Label>
-              <span 
-                className="tabular-nums text-sm text-muted-foreground" 
-                data-testid="text-progress-value"
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-2">
+                <Flag className="h-4 w-4" />
+                {t("tasks.priority")}
+              </Label>
+              <Select
+                value={form.watch("priority")}
+                onValueChange={(v) => form.setValue("priority", v as any)}
               >
-                {progress}%
-              </span>
-            </div>
-            <Slider
-              id="progress"
-              min={0}
-              max={100}
-              step={5}
-              value={[progress]}
-              onValueChange={(v) => form.setValue("progress", v[0])}
-              data-testid="slider-progress"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="startDate">{t("tasks.startDate")}</Label>
-              <Input
-                id="startDate"
-                type="date"
-                data-testid="input-start-date"
-                {...form.register("startDate")}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="endDate">{t("tasks.endDate")}</Label>
-              <Input
-                id="endDate"
-                type="date"
-                data-testid="input-end-date"
-                {...form.register("endDate")}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t("tasks.duration")}</Label>
-              {durationDisplay ? (
-                <div className="text-sm border rounded-md py-2 px-3 min-h-[40px] flex items-center">
-                  {durationDisplay}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground border rounded-md py-2 px-3 min-h-[40px] flex items-center">
-                  {t("tasks.noDuration")}
-                </div>
-              )}
+                <SelectTrigger data-testid="select-priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">{t("tasks.low")}</SelectItem>
+                  <SelectItem value="medium">{t("tasks.medium")}</SelectItem>
+                  <SelectItem value="high">{t("tasks.high")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
+          {/* Due Date and Period */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="dueDate">{t("tasks.dueDate")}</Label>
+              <Label htmlFor="dueDate" className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                {t("tasks.dueDate")}
+              </Label>
               <Input
                 id="dueDate"
                 type="date"
@@ -303,7 +232,33 @@ export function TaskDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="timeEstimate">{t("tasks.timeEstimate")}</Label>
+              <Label className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                {t("tasks.period")}
+              </Label>
+              <Select
+                value={form.watch("period")}
+                onValueChange={(v) => form.setValue("period", v as any)}
+              >
+                <SelectTrigger data-testid="select-period">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">{t("tasks.day")}</SelectItem>
+                  <SelectItem value="month">{t("tasks.month")}</SelectItem>
+                  <SelectItem value="year">{t("tasks.year")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Time Estimate and Progress */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="timeEstimate" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                {t("tasks.timeEstimate")}
+              </Label>
               <Input
                 id="timeEstimate"
                 type="number"
@@ -313,46 +268,45 @@ export function TaskDialog({
                 {...form.register("timeEstimate")}
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="metricTarget">{t("tasks.metricTarget")}</Label>
-              <Input
-                id="metricTarget"
-                type="number"
-                min={0}
-                placeholder="e.g. 60"
-                data-testid="input-metric-target"
-                {...form.register("metricTarget")}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="metricUnit">{t("tasks.metricUnit")}</Label>
-              <Input
-                id="metricUnit"
-                placeholder={t("tasks.metricUnitPlaceholder")}
-                data-testid="input-metric-unit"
-                {...form.register("metricUnit")}
-              />
+              <Label htmlFor="progress" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                {t("tasks.progress")}
+              </Label>
+              <div className="flex items-center gap-3">
+                <Slider
+                  id="progress"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={[progress]}
+                  onValueChange={(v) => form.setValue("progress", v[0])}
+                  data-testid="slider-progress"
+                  className="flex-1"
+                />
+                <span className="tabular-nums text-sm font-medium w-12 text-right">
+                  {progress}%
+                </span>
+              </div>
             </div>
           </div>
 
+          {/* Notes - Optional */}
           <div className="space-y-1.5">
             <Label htmlFor="notes">{t("tasks.notes")}</Label>
             <Textarea
               id="notes"
-              rows={3}
+              rows={2}
               placeholder={t("tasks.notesPlaceholder")}
               data-testid="input-notes"
               {...form.register("notes")}
             />
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-4">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               onClick={() => onOpenChange(false)}
               data-testid="button-cancel-task"
             >

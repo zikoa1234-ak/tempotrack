@@ -33,7 +33,16 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
       { code: "+61", name: "Australia 🇦🇺" },
       { code: "+82", name: "South Korea 🇰🇷" },
       { code: "+90", name: "Turkey 🇹🇷" },
+      { code: "+213", name: "Algeria 🇩🇿" },
+      { code: "+216", name: "Tunisia 🇹🇳" },
+      { code: "+20", name: "Egypt 🇪🇬" },
     ];
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Allow only numbers
+      const numericValue = e.target.value.replace(/[^\d]/g, "");
+      onValueChange(numericValue);
+    };
 
     return (
       <div className="flex gap-2">
@@ -53,8 +62,10 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
           ref={ref}
           type="tel"
           value={value}
-          onChange={(e) => onValueChange(e.target.value)}
+          onChange={handlePhoneChange}
           placeholder="Phone number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           {...props}
         />
       </div>
