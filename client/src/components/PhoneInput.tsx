@@ -10,13 +10,13 @@ import {
 
 interface PhoneInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   value: string;
-  onValueChange: (value: string) => void;
+  onChange: (value: string) => void;
   countryCode: string;
   onCountryCodeChange: (code: string) => void;
 }
 
 export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
-  ({ value, onValueChange, countryCode, onCountryCodeChange, ...props }, ref) => {
+  ({ value, onChange, countryCode, onCountryCodeChange, ...props }, ref) => {
     const countryCodes = [
       { code: "+212", name: "Morocco 🇲🇦" },
       { code: "+33", name: "France 🇫🇷" },
@@ -41,7 +41,7 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       // Allow only numbers
       const numericValue = e.target.value.replace(/[^\d]/g, "");
-      onValueChange(numericValue);
+      onChange(numericValue);
     };
 
     return (
