@@ -113,8 +113,8 @@ export function TaskDialog({
       dueDate: values.dueDate?.trim() || null,
       startDate: values.startDate?.trim() || null,
       endDate: values.endDate?.trim() || null,
-      timeEstimate: values.timeEstimate ?? null,
-      metricTarget: values.metricTarget ?? null,
+      timeEstimate: values.timeEstimate === "" || values.timeEstimate === undefined ? null : Number(values.timeEstimate),
+      metricTarget: values.metricTarget === "" || values.metricTarget === undefined ? null : Number(values.metricTarget),
       metricUnit: values.metricUnit?.trim() || null,
     };
     try {
@@ -298,7 +298,7 @@ export function TaskDialog({
                 min={0}
                 placeholder="30"
                 data-testid="input-time-estimate"
-                {...form.register("timeEstimate")}
+                {...form.register("timeEstimate", { valueAsNumber: true })}
               />
             </div>
             <div className="space-y-1.5">

@@ -41,7 +41,9 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       // Allow only numbers
       const numericValue = e.target.value.replace(/[^\d]/g, "");
-      onChange(numericValue);
+      // Limit to 11 digits
+      const limitedValue = numericValue.slice(0, 11);
+      onChange(limitedValue);
     };
 
     return (
